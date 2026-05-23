@@ -1,0 +1,14 @@
+{
+  "name": "RoadSoS AI",
+  "short_name": "RoadSoS",
+  "description": "Golden Hour Intelligence System for road accident emergency response",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0D0F",
+  "theme_color": "#E8352A",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

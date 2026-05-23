@@ -1,0 +1,13 @@
+# RoadSoS AI — Python inference server dependencies
+# Install with: pip install -r requirements.txt
+
+# Core ML
+keras>=3.0.0
+# Choose ONE backend (uncomment your preferred):
+# tensorflow>=2.15.0       # most compatible, heaviest
+jax[cpu]>=0.4.0            # lightest for CPU inference
+# torch>=2.0.0             # if you prefer PyTorch backend
+
+# Image processing
+Pillow>=10.0.0
+numpy>=1.24.0

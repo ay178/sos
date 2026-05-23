@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --red: #E8352A;
+  --amber: #F5A623;
+  --green: #1DB954;
+  --blue: #2D9CDB;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: #0D0D0F;
+  color: #F0F0F2;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* SOS pulse ring animation */
+@keyframes sos-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.sos-ring-anim {
+  animation: sos-ring 2s ease-out infinite;
+}
+
+/* Ambulance dot movement */
+@keyframes amb-track {
+  0%   { left: 18%; top: 68%; }
+  30%  { left: 33%; top: 52%; }
+  60%  { left: 47%; top: 41%; }
+  80%  { left: 50%; top: 42%; }
+  100% { left: 18%; top: 68%; }
+}
+.amb-dot { animation: amb-track 8s linear infinite; }
+
+/* Map pulse */
+@keyframes map-pulse {
+  0%   { transform: translate(-50%,-50%) scale(0.4); opacity: 0.9; }
+  100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0; }
+}
+.map-pulse-anim { animation: map-pulse 2.2s ease-out infinite; }
+
+/* Fade in up */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeInUp 0.45s ease both; }
+
+/* TRS bar fill */
+@keyframes trs-fill {
+  from { width: 0%; }
+}
+.trs-bar-fill { animation: trs-fill 1.2s cubic-bezier(0.4,0,0.2,1) both; }
+
+/* Progress bar */
+@keyframes progress-slide {
+  from { width: 0%; }
+}
+.progress-anim { animation: progress-slide 1s cubic-bezier(0.4,0,0.2,1) both; }
