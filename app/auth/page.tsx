@@ -25,9 +25,7 @@ export default function AuthPage() {
         if (error) throw error
         router.push('/')
       }
-    } catch (e: any) {
-      setError(e.message)
-    }
+    } catch (e: any) { setError(e.message) }
     setLoading(false)
   }
 
@@ -39,40 +37,28 @@ export default function AuthPage() {
           <div className="font-display font-black text-2xl">RoadSoS AI</div>
           <div className="text-sm text-white/40 mt-1">Golden Hour Intelligence System</div>
         </div>
-
         <div className="bg-[#1C1C21] border border-white/8 rounded-2xl p-6 space-y-4">
-          {/* Tabs */}
           <div className="flex gap-1 bg-[#141417] rounded-xl p-1">
             {(['login', 'signup'] as const).map(m => (
               <button key={m} onClick={() => setMode(m)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all capitalize ${mode === m ? 'bg-[#1C1C21] text-white' : 'text-white/40'}`}>
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === m ? 'bg-[#1C1C21] text-white' : 'text-white/40'}`}>
                 {m === 'login' ? 'Sign in' : 'Sign up'}
               </button>
             ))}
           </div>
-
           <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
             className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-red-500 transition-colors" />
-
           <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
             className="w-full px-4 py-3 bg-[#252529] border border-white/10 rounded-xl text-white placeholder-white/30 text-sm focus:outline-none focus:border-red-500 transition-colors" />
-
           {error && <div className="text-red-400 text-sm bg-red-950/50 border border-red-500/20 rounded-xl px-4 py-3">{error}</div>}
           {success && <div className="text-green-400 text-sm bg-green-950/50 border border-green-500/20 rounded-xl px-4 py-3">{success}</div>}
-
           <button onClick={handleAuth} disabled={loading || !email || !password}
-            className="w-full py-4 bg-red-500 text-white rounded-xl font-display font-bold text-base hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-default">
+            className="w-full py-4 bg-red-500 text-white rounded-xl font-display font-bold text-base hover:bg-red-600 transition-colors disabled:opacity-40">
             {loading ? '...' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
-
-          <button onClick={() => router.push('/')}
-            className="w-full py-3 text-white/30 text-sm hover:text-white/60 transition-colors">
+          <button onClick={() => router.push('/')} className="w-full py-3 text-white/30 text-sm hover:text-white/60 transition-colors">
             Continue without account
           </button>
-        </div>
-
-        <div className="text-center text-xs text-white/20 mt-6">
-          An account lets you save your medical profile and emergency contacts
         </div>
       </div>
     </div>

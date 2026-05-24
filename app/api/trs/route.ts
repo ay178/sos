@@ -18,14 +18,10 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient()
     const { data: hospitals, error } = await supabase
-      .from('hospitals')
-      .select('*')
-      .eq('is_active', true)
+      .from('hospitals').select('*').eq('is_active', true)
 
     if (error) throw error
-
     const ranked = rankHospitals(hospitals, lat, lng, severity, blood_group, max_radius_km)
-
     return NextResponse.json({ success: true, hospitals: ranked })
   } catch (e) {
     console.error('/api/trs error:', e)
