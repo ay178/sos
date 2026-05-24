@@ -1,51 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase'
-import { createServiceClient } from '@/lib/supabase'
-import { z } from 'zod'
+import { createBrowserClient, createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
-const schema = z.object({
-  full_name: z.string().optional(),
-  phone: z.string().optional(),
-  blood_group: z.string().optional(),
-  allergies: z.array(z.string()).optional(),
-  conditions: z.array(z.string()).optional(),
-  emergency_contacts: z.array(z.object({
-    name: z.string(),
-    phone: z.string(),
-    relation: z.string().optional(),
-    priority: z.number().optional(),
-  })).optional(),
-})
-
-export async function GET() {
-  const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const db = createServiceClient()
-  const { data: profile } = await db.from('profiles').select('*, emergency_contacts(*)').eq('id', user.id).single()
-  return NextResponse.json({ profile })
+// ── Browser client (use in 'use client' components) ──────────────────────
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
-export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabase()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const body = schema.parse(await req.json())
-  const db = createServiceClient()
-
-  const { emergency_contacts, ...profileData } = body
-  await db.from('profiles').upsert({ id: user.id, ...profileData, updated_at: new Date().toISOString() })
-
-  if (emergency_contacts) {
-    await db.from('emergency_contacts').delete().eq('profile_id', user.id)
-    if (emergency_contacts.length > 0) {
-      await db.from('emergency_contacts').insert(
-        emergency_contacts.map((c, i) => ({ ...c, profile_id: user.id, priority: i + 1 }))
-      )
+// ── Server client (use in Server Components / API routes) ─────────────────
+export async function createServerSupabase() {
+  const cookieStore = await cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
     }
-  }
+  )
+}
 
-  return NextResponse.json({ success: true })
+// ── Service role client (bypasses RLS — only use in API routes) ───────────
+export function createServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  )
 }
