@@ -75,6 +75,27 @@ export default function HospitalDashboard() {
   const [orEdit, setOrEdit] = useState(false)
   const [orVal, setOrVal] = useState(String(DEMO_STATS.or_rooms_available))
   const [now, setNow] = useState(Date.now())
+  const [hospitalId, setHospitalId] = useState<string | null>(null)
+
+  const supabase = createClient()
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('hospital-updates')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'hospitals' },
+        (payload) => {
+          setStats(prev => ({ ...prev, ...payload.new }))
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [supabase])
 
   useEffect(() => {
     const iv = setInterval(() => setNow(Date.now()), 10000)
@@ -91,6 +112,47 @@ export default function HospitalDashboard() {
   function acknowledge(id: string) {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a))
   }
+
+  const updateIcuBeds = useCallback(async () => {
+    try {
+      if (!hospitalId) return
+      await supabase
+        .from('hospitals')
+        .update({ icu_beds_available: Number(icuVal) })
+        .eq('id', hospitalId)
+      setIcuEdit(false)
+    } catch (error) {
+      console.error('Error updating ICU beds:', error)
+    }
+  }, [hospitalId, icuVal, supabase])
+
+  const updateOrRooms = useCallback(async () => {
+    try {
+      if (!hospitalId) return
+      await supabase
+        .from('hospitals')
+        .update({ or_rooms_available: Number(orVal) })
+        .eq('id', hospitalId)
+      setOrEdit(false)
+    } catch (error) {
+      console.error('Error updating OR rooms:', error)
+    }
+  }, [hospitalId, orVal, supabase])
+
+  const updateBloodSupply = useCallback(async (bloodType: string, available: boolean) => {
+    try {
+      if (!hospitalId) return
+      const newBloodAvailable = available
+        ? stats.blood_available.filter(x => x !== bloodType)
+        : [...stats.blood_available, bloodType]
+      await supabase
+        .from('hospitals')
+        .update({ blood_available: newBloodAvailable })
+        .eq('id', hospitalId)
+    } catch (error) {
+      console.error('Error updating blood supply:', error)
+    }
+  }, [hospitalId, stats.blood_available, supabase])
 
   const sevColor = (t: string) => t === 'Critical' ? 'red' : t === 'Serious' ? 'amber' : 'green'
   const statusColor = (s: string) => s === 'en_route' ? 'amber' : s === 'arrived' ? 'green' : 'gray'
@@ -123,11 +185,10 @@ export default function HospitalDashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-4 md:px-6 py-6">
-
         {/* ── STAT CARDS ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           {[
-            { label: 'ICU beds free', value: `${stats.icu_beds_available}/${stats.icu_beds_total}`, sub: 'Available now', color: stats.icu_beds_available > 8 ? 'text-green-400' : stats.icu_beds_available > 3 ? 'text-amber-400' : 'text-red-400' },
+            { label: 'ICU beds free', value: `${stats.icu_beds_available}/${stats.icu_beds_total}`, sub: 'Available now', color: stats.icu_beds_available > 8 ? 'text-green-400' : stats.icu_beds_available > 4 ? 'text-amber-400' : 'text-red-400' },
             { label: 'OR rooms', value: `${stats.or_rooms_available}/6`, sub: 'Ready', color: stats.or_rooms_available > 2 ? 'text-green-400' : 'text-amber-400' },
             { label: 'TRS rank', value: `#${stats.trs_rank}`, sub: 'New Delhi', color: 'text-blue-400' },
             { label: 'Active alerts', value: String(unacked), sub: 'Unacknowledged', color: unacked > 0 ? 'text-red-400' : 'text-green-400' },
@@ -264,7 +325,7 @@ export default function HospitalDashboard() {
                     <input type="number" value={icuVal} onChange={e => setIcuVal(e.target.value)}
                       className="w-24 px-3 py-2 bg-[#252529] border border-white/10 rounded-xl text-white text-lg font-bold focus:outline-none focus:border-green-500" />
                     <span className="text-white/30 text-sm">/ {stats.icu_beds_total}</span>
-                    <button onClick={() => { setStats(s => ({ ...s, icu_beds_available: Number(icuVal) })); setIcuEdit(false) }}
+                    <button onClick={updateIcuBeds}
                       className="ml-auto px-4 py-2 bg-green-500 text-black rounded-xl font-bold text-sm">Save</button>
                   </div>
                 ) : (
@@ -296,7 +357,7 @@ export default function HospitalDashboard() {
                     <input type="number" value={orVal} onChange={e => setOrVal(e.target.value)}
                       className="w-24 px-3 py-2 bg-[#252529] border border-white/10 rounded-xl text-white text-lg font-bold focus:outline-none focus:border-amber-500" />
                     <span className="text-white/30 text-sm">/ 6</span>
-                    <button onClick={() => { setStats(s => ({ ...s, or_rooms_available: Number(orVal) })); setOrEdit(false) }}
+                    <button onClick={updateOrRooms}
                       className="ml-auto px-4 py-2 bg-amber-500 text-black rounded-xl font-bold text-sm">Save</button>
                   </div>
                 ) : (
@@ -322,12 +383,7 @@ export default function HospitalDashboard() {
                   const available = stats.blood_available.includes(bg)
                   return (
                     <button key={bg}
-                      onClick={() => setStats(s => ({
-                        ...s,
-                        blood_available: available
-                          ? s.blood_available.filter(x => x !== bg)
-                          : [...s.blood_available, bg]
-                      }))}
+                      onClick={() => updateBloodSupply(bg, available)}
                       className={cn('px-3 py-2 rounded-xl text-sm font-mono font-medium transition-all',
                         available ? 'bg-green-950 border border-green-500/40 text-green-400' : 'bg-[#141417] border border-white/8 text-white/30')}>
                       {bg}
